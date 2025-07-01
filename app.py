@@ -11,11 +11,6 @@ app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = '147369'
 app.config['MYSQL_DB'] = 'filedb'
 
-# Fake user database (for login)
-users = {
-    "admin": "123456"
-}
-
 # Upload folder setup
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -28,11 +23,19 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        if username in users and users[username] == password:
+
+        # Check database for matching username and password
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM user_info WHERE username = %s AND password = %s", (username, password))
+        user = cur.fetchone()
+        cur.close()
+
+        if user:
             session['username'] = username
             return redirect(url_for('index'))
         else:
             return 'Invalid credentials'
+
     return render_template('login.html')
 
 @app.route('/logout')
